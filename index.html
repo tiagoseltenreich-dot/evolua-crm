@@ -350,6 +350,10 @@ select:focus{outline:none;border-color:var(--gold)}
         <div class="dash-card ai-card"><h3><span class="ai-pulse"></span> Atividade dos Agentes IA</h3><div class="ai-feed" id="aiFeed"></div></div>
         <div class="dash-card ai-card"><h3><i class="ti ti-chart-bar" style="color:var(--ai2)"></i> Performance IA</h3><div id="aiKpis" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div></div>
       </div>
+      <div class="dash-card" style="margin-bottom:16px">
+        <h3><i class="ti ti-alert-circle" style="color:#E06030"></i> Leads com dados incompletos</h3>
+        <div id="dashPendentes"><div style="font-size:12px;color:var(--text3)">Carregando...</div></div>
+      </div>
     </div>
 
     <div class="page" id="page-pipeline">
@@ -421,13 +425,20 @@ select:focus{outline:none;border-color:var(--gold)}
 
 <!-- MODAL EDIT LEAD -->
 <div class="moverlay" id="editModal"><div class="mbox">
-  <h3 id="editTitle">Editar</h3>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <h3 id="editTitle" style="margin-bottom:0">Editar</h3>
+    <div id="editAlerts" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+  </div>
   <div class="mgrid">
-    <div class="full"><label>Nome</label><input id="eNome" type="text"></div>
+    <div class="full"><label>Nome da imobiliária</label><input id="eNome" type="text"></div>
     <div><label>Cidade / Estado</label><input id="eCidade" type="text"></div>
     <div><label>Tamanho</label><select id="eSeg"><option value="?">Não identificado</option><option value="P">Pequena</option><option value="M">Média</option><option value="G">Grande</option><option value="EG">Muito grande</option></select></div>
-    <div class="full"><label>Contato</label><input id="eContato" type="text"></div>
-    <div class="full"><label>Fonte</label><select id="eFonte"><option>Instagram</option><option>LinkedIn</option><option>Indicação</option><option>Google Maps</option><option>Portais</option><option>Evento / SECOVI</option><option>IA — Hunter Agent</option><option>Outro</option></select></div>
+    <div class="full"><label>Nome do contato</label><input id="eNomeContato" type="text" placeholder="Ex: João Silva"></div>
+    <div class="full"><label>Telefone / WhatsApp</label><input id="eContato" type="text"></div>
+    <div class="full"><label>E-mail</label><input id="eEmail" type="text" placeholder="contato@imobiliaria.com.br"></div>
+    <div class="full"><label>Instagram</label><input id="eInstagram" type="text" placeholder="@imobiliaria"></div>
+    <div class="full"><label>Site</label><input id="eSite" type="text" placeholder="www.imobiliaria.com.br"></div>
+    <div class="full"><label>Fonte</label><select id="eFonte"><option>Instagram</option><option>LinkedIn</option><option>Indicação</option><option>Google Maps</option><option>Portais</option><option>Evento / SECOVI</option><option>Base Alufácil</option><option>IA — Hunter Agent</option><option>Outro</option></select></div>
     <div class="full"><label>Último follow-up</label><input id="eFollowup" type="text"></div>
     <div class="full"><label>Notas internas</label><textarea id="eNotas"></textarea></div>
     <div class="full"><label>Score IA (0–100)</label><input id="eScore" type="number" min="0" max="100"></div>
@@ -445,11 +456,15 @@ select:focus{outline:none;border-color:var(--gold)}
 <div class="moverlay" id="newLeadModal"><div class="mbox">
   <h3>Nova imobiliária</h3>
   <div class="mgrid">
-    <div class="full"><label>Nome *</label><input id="nNome" type="text"></div>
+    <div class="full"><label>Nome da imobiliária *</label><input id="nNome" type="text"></div>
     <div><label>Cidade / Estado</label><input id="nCidade" type="text" placeholder="Porto Alegre, RS"></div>
     <div><label>Tamanho</label><select id="nSeg"><option value="?">Não identificado</option><option value="P">Pequena</option><option value="M">Média</option><option value="G">Grande</option><option value="EG">Muito grande</option></select></div>
-    <div class="full"><label>Contato</label><input id="nContato" type="text"></div>
-    <div class="full"><label>Fonte</label><select id="nFonte"><option>Instagram</option><option>LinkedIn</option><option>Indicação</option><option>Google Maps</option><option>Portais</option><option>Evento / SECOVI</option><option>IA — Hunter Agent</option><option>Outro</option></select></div>
+    <div class="full"><label>Nome do contato</label><input id="nNomeContato" type="text" placeholder="Ex: João Silva"></div>
+    <div class="full"><label>Telefone / WhatsApp</label><input id="nContato" type="text"></div>
+    <div class="full"><label>E-mail</label><input id="nEmail" type="text" placeholder="contato@imobiliaria.com.br"></div>
+    <div class="full"><label>Instagram</label><input id="nInstagram" type="text" placeholder="@imobiliaria"></div>
+    <div class="full"><label>Site</label><input id="nSite" type="text" placeholder="www.imobiliaria.com.br"></div>
+    <div class="full"><label>Fonte</label><select id="nFonte"><option>Instagram</option><option>LinkedIn</option><option>Indicação</option><option>Google Maps</option><option>Portais</option><option>Evento / SECOVI</option><option>Base Alufácil</option><option>IA — Hunter Agent</option><option>Outro</option></select></div>
     <div class="full"><label>Último follow-up</label><input id="nFollowup" type="text"></div>
     <div class="full"><label>Notas internas</label><input id="nNotas" type="text"></div>
     <div class="full"><label>Estágio</label><select id="nStage"><option value="prospect">Prospecto</option><option value="contato">1º Contato</option><option value="engajado">Engajado</option><option value="diagnostico">Diagnóstico</option><option value="proposta">Proposta</option><option value="fechado">Fechado</option></select></div>
@@ -566,6 +581,50 @@ onSnapshot(collection(db,'usuarios'),snap=>{
   if(window._usuarios.length===0)window.saveUserDB({id:'admin_tiago',user:'tiagoseltenreich',pass:'$1980Tiagus$',nome:'Tiago Seltenreich',role:'admin'});
   if(window._loggedIn)renderUsuarios();
 });
+
+// SEED: 20 imobiliárias
+window._seedDone=false;
+async function seedImobiliarias(){
+  if(window._seedDone)return;
+  window._seedDone=true;
+  const snap=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js").then(m=>m.getDocs(collection(db,'leads')));
+  const existentes=snap.docs.map(d=>d.data().nome);
+  const novas=[
+    {nome:'Imobiliária Pirâmide',cidade:'Joinville, SC',nomeContato:'Diretoria Geral',instagram:'@piramideimoveisjlle',site:'piramideimoveis.com.br',fonte:'Indicação'},
+    {nome:'Imobiliária Alternativa',cidade:'Blumenau, SC',nomeContato:'Ricardo Cubas',instagram:'@imobiliariaalternativa',site:'alternativabnu.com.br',fonte:'Indicação'},
+    {nome:'Dinâmica Imóveis',cidade:'Chapecó, SC',nomeContato:'Nelson Akimoto',instagram:'@dinamicaimoveischapeco',site:'dinamicaimoveis.co',fonte:'Indicação'},
+    {nome:'VIP Imob',cidade:'Criciúma, SC',nomeContato:'',instagram:'@vipimob',site:'vipimob.com.br',fonte:'Indicação'},
+    {nome:'Imobiliária Cidade Novo',cidade:'Jaraguá do Sul, SC',nomeContato:'',instagram:'@cidadenovoimoveis',site:'cidadenovo.com.br',fonte:'Indicação'},
+    {nome:'Casagrande Imóveis',cidade:'Lages, SC',nomeContato:'',instagram:'@casagrandeimoveislages',site:'casagrande-lages.com.br',fonte:'Indicação'},
+    {nome:'Traço Imóveis',cidade:'Tubarão, SC',nomeContato:'Júlio César',instagram:'@tracoimoveis',site:'tracoimoveis.com.br',fonte:'Indicação'},
+    {nome:'Ponto Inicial Imóveis',cidade:'Palhoça, SC',nomeContato:'',instagram:'@pontoinicialimoveis',site:'poinicial.com.br',fonte:'Indicação'},
+    {nome:'Mercado Imobiliário',cidade:'Itajaí, SC',nomeContato:'',instagram:'@mercadoimoveisitajai',site:'mercadoimoveis.com.br',fonte:'Indicação'},
+    {nome:'Imobiliária Franco',cidade:'Brusque, SC',nomeContato:'',instagram:'@francoimoveisbrusque',site:'francoimoveis.com.br',fonte:'Indicação'},
+    {nome:'Imobiliária Beltrão',cidade:'Maringá, PR',nomeContato:'Silvio Beltrão',instagram:'@imobiliariabeltrao',site:'imobiliariabeltrao.com.br',fonte:'Indicação'},
+    {nome:'Imobiliária J. Parra',cidade:'Londrina, PR',nomeContato:'José Parra',instagram:'@jparraimoveis',site:'jparra.com.br',fonte:'Indicação'},
+    {nome:'Imobiliária Samburá',cidade:'Cascavel, PR',nomeContato:'',instagram:'@samburaimoveis',site:'samburaimoveis.com.br',fonte:'Indicação'},
+    {nome:'Adquira Imóveis',cidade:'Ponta Grossa, PR',nomeContato:'Lourival',instagram:'@adquiraimoveis',site:'adquiraimoveis.com.br',fonte:'Indicação'},
+    {nome:'Solos Incorporadora',cidade:'Foz do Iguaçu, PR',nomeContato:'',instagram:'@solosimoveis',site:'solosimoveis.com.br',fonte:'Indicação'},
+    {nome:'Imobiliária Kaza',cidade:'Guarapuava, PR',nomeContato:'',instagram:'@kazaguarapuava',site:'kazaguarapuava.com.br',fonte:'Indicação'},
+    {nome:'VIP Imóveis Toledo',cidade:'Toledo, PR',nomeContato:'',instagram:'@vipimoveistoledo',site:'vipimoveistoledo.com.br',fonte:'Indicação'},
+    {nome:'Imobiliária Novo Teto',cidade:'Apucarana, PR',nomeContato:'',instagram:'@novatetoimoveis',site:'novateto.com.br',fonte:'Indicação'},
+    {nome:'Delta Imóveis',cidade:'Umuarama, PR',nomeContato:'',instagram:'@deltaimoveisumuarama',site:'deltaumuarama.com.br',fonte:'Indicação'},
+    {nome:'Imobiliária Campagnolo',cidade:'Pato Branco, PR',nomeContato:'Vanderlei Campagnolo',instagram:'@campagnoloimoveis',site:'campagnoloimoveis.com.br',fonte:'Indicação'},
+  ];
+  for(const n of novas){
+    if(!existentes.includes(n.nome)){
+      await setDoc(doc(db,'leads','seed_'+n.nome.replace(/\s+/g,'_').toLowerCase()),{
+        id:'seed_'+n.nome.replace(/\s+/g,'_').toLowerCase(),
+        nome:n.nome,cidade:n.cidade,seg:'?',
+        nomeContato:n.nomeContato||'',contato:'',email:'',
+        instagram:n.instagram||'',site:n.site||'',
+        fonte:n.fonte,followup:'',notas:'',score:'',stage:'prospect'
+      });
+    }
+  }
+}
+// Roda seed uma vez após carregar
+setTimeout(()=>{import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js").then(({getDocs})=>{getDocs(collection(db,'leads')).then(snap=>{const existentes=snap.docs.map(d=>d.data().nome);const novas=[{nome:'Imobiliária Pirâmide',cidade:'Joinville, SC',nomeContato:'',instagram:'@piramideimoveisjlle',site:'piramideimoveis.com.br'},{nome:'Imobiliária Alternativa',cidade:'Blumenau, SC',nomeContato:'Ricardo Cubas',instagram:'@imobiliariaalternativa',site:'alternativabnu.com.br'},{nome:'Dinâmica Imóveis',cidade:'Chapecó, SC',nomeContato:'Nelson Akimoto',instagram:'@dinamicaimoveischapeco',site:'dinamicaimoveis.co'},{nome:'VIP Imob',cidade:'Criciúma, SC',nomeContato:'',instagram:'@vipimob',site:'vipimob.com.br'},{nome:'Imobiliária Cidade Novo',cidade:'Jaraguá do Sul, SC',nomeContato:'',instagram:'@cidadenovoimoveis',site:'cidadenovo.com.br'},{nome:'Casagrande Imóveis',cidade:'Lages, SC',nomeContato:'',instagram:'@casagrandeimoveislages',site:'casagrande-lages.com.br'},{nome:'Traço Imóveis',cidade:'Tubarão, SC',nomeContato:'Júlio César',instagram:'@tracoimoveis',site:'tracoimoveis.com.br'},{nome:'Ponto Inicial Imóveis',cidade:'Palhoça, SC',nomeContato:'',instagram:'@pontoinicialimoveis',site:'poinicial.com.br'},{nome:'Mercado Imobiliário',cidade:'Itajaí, SC',nomeContato:'',instagram:'@mercadoimoveisitajai',site:'mercadoimoveis.com.br'},{nome:'Imobiliária Franco',cidade:'Brusque, SC',nomeContato:'',instagram:'@francoimoveisbrusque',site:'francoimoveis.com.br'},{nome:'Imobiliária Beltrão',cidade:'Maringá, PR',nomeContato:'Silvio Beltrão',instagram:'@imobiliariabeltrao',site:'imobiliariabeltrao.com.br'},{nome:'Imobiliária J. Parra',cidade:'Londrina, PR',nomeContato:'José Parra',instagram:'@jparraimoveis',site:'jparra.com.br'},{nome:'Imobiliária Samburá',cidade:'Cascavel, PR',nomeContato:'',instagram:'@samburaimoveis',site:'samburaimoveis.com.br'},{nome:'Adquira Imóveis',cidade:'Ponta Grossa, PR',nomeContato:'Lourival',instagram:'@adquiraimoveis',site:'adquiraimoveis.com.br'},{nome:'Solos Incorporadora',cidade:'Foz do Iguaçu, PR',nomeContato:'',instagram:'@solosimoveis',site:'solosimoveis.com.br'},{nome:'Imobiliária Kaza',cidade:'Guarapuava, PR',nomeContato:'',instagram:'@kazaguarapuava',site:'kazaguarapuava.com.br'},{nome:'VIP Imóveis Toledo',cidade:'Toledo, PR',nomeContato:'',instagram:'@vipimoveistoledo',site:'vipimoveistoledo.com.br'},{nome:'Imobiliária Novo Teto',cidade:'Apucarana, PR',nomeContato:'',instagram:'@novatetoimoveis',site:'novateto.com.br'},{nome:'Delta Imóveis',cidade:'Umuarama, PR',nomeContato:'',instagram:'@deltaimoveisumuarama',site:'deltaumuarama.com.br'},{nome:'Imobiliária Campagnolo',cidade:'Pato Branco, PR',nomeContato:'Vanderlei Campagnolo',instagram:'@campagnoloimoveis',site:'campagnoloimoveis.com.br'}];novas.forEach(n=>{if(!existentes.includes(n.nome)){setDoc(doc(db,'leads','seed_'+n.nome.replace(/[^a-z0-9]/gi,'_').toLowerCase()),{id:'seed_'+n.nome.replace(/[^a-z0-9]/gi,'_').toLowerCase(),nome:n.nome,cidade:n.cidade,seg:'?',nomeContato:n.nomeContato||'',contato:'',email:'',instagram:n.instagram||'',site:n.site||'',fonte:'Indicação',followup:'',notas:'',score:'',stage:'prospect'});}});});});},3000);
 </script>
 
 <script>
@@ -690,6 +749,28 @@ function renderDashboard(){
     {type:'move',icon:'ti-arrows-right',text:'Lead Horizonte Imóveis movido para Engajado',time:'1h'},
   ].map(f=>`<div class="ai-feed-item"><div class="ai-feed-icon ${f.type}"><i class="ti ${f.icon}"></i></div><div class="ai-feed-text">${f.text}</div><div class="ai-feed-time">${f.time}</div></div>`).join('');
   document.getElementById('aiKpis').innerHTML=`<div class="kpi" style="padding:10px 12px"><div class="kpiv cai" style="font-size:22px">—</div><div class="kpil">Encontradas</div></div><div class="kpi" style="padding:10px 12px"><div class="kpiv cb" style="font-size:22px">—</div><div class="kpil">Msgs enviadas</div></div><div class="kpi" style="padding:10px 12px"><div class="kpiv cv" style="font-size:22px">—</div><div class="kpil">Reuniões</div></div><div class="kpi" style="padding:10px 12px"><div class="kpiv co" style="font-size:22px">—</div><div class="kpil">Taxa resposta</div></div>`;
+
+  // PENDÊNCIAS
+  const pendentes=leads.filter(l=>getCamposFaltando(l).length>0);
+  const pendEl=document.getElementById('dashPendentes');
+  if(pendEl){
+    if(!pendentes.length){
+      pendEl.innerHTML='<div style="font-size:12px;color:var(--success);display:flex;align-items:center;gap:5px"><i class="ti ti-circle-check"></i> Todos os leads estão completos</div>';
+    } else {
+      pendEl.innerHTML=pendentes.slice(0,8).map(l=>{
+        const falta=getCamposFaltando(l);
+        return`<div onclick="openEdit('${l.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--navy3);border-radius:6px;border:1px solid var(--border);cursor:pointer;margin-bottom:5px">
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;color:var(--text)">${esc(l.nome)}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:1px">${esc(l.cidade||'—')}</div>
+          </div>
+          <div style="display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end;max-width:60%">
+            ${falta.map(f=>`<span style="font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(224,96,48,.12);color:#E06030;border:1px solid rgba(224,96,48,.2)">${f}</span>`).join('')}
+          </div>
+        </div>`;
+      }).join('')+(pendentes.length>8?`<div style="font-size:11px;color:var(--text3);text-align:center;padding-top:4px">+${pendentes.length-8} outros</div>`:'');
+    }
+  }
 }
 
 // PIPELINE
@@ -703,8 +784,13 @@ function renderPipeline(){
     const cards=list.filter(l=>l.stage===s.id);
     const ch=cards.length?cards.map(l=>{
       const est2=estado(l.cidade),showSeg=l.seg&&l.seg!=='?',hasTags=showSeg||est2||l.fonte;
+      const falta=getCamposFaltando(l);
+      const alertIcon=falta.length?`<span title="Incompleto: ${falta.join(', ')}" style="display:inline-flex;align-items:center;gap:2px;font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(224,96,48,.15);color:#E06030;border:1px solid rgba(224,96,48,.2);cursor:help"><i class="ti ti-alert-circle" style="font-size:11px"></i>${falta.length}</span>`:'';
       return`<div class="card${l.fonte&&l.fonte.includes('IA')?' ai-lead':''}" onclick="openEdit('${l.id}')">
-        <div class="cnome">${esc(l.nome)}</div>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px;margin-bottom:4px">
+          <div class="cnome" style="margin-bottom:0">${esc(l.nome)}</div>
+          ${alertIcon}
+        </div>
         ${hasTags?`<div class="tags">${showSeg?`<span class="tag ${window.SEG_T[l.seg]}">${window.SEG_L[l.seg]}</span>`:''}${est2?`<span class="tag ${window.EST_T[est2]||''}">${est2}</span>`:''}${l.score?`<span class="tag tai">Score ${l.score}</span>`:''}${l.fonte?`<span class="tag tfonte">${esc(l.fonte)}</span>`:''}</div>`:''}
         ${l.followup?`<div class="cfu">${esc(l.followup.length>55?l.followup.substring(0,55)+'…':l.followup)}</div>`:''}
         <div class="cbtns">
@@ -721,14 +807,41 @@ function renderPipeline(){
 
 async function moveCard(id,dir,e){e.stopPropagation();const l=(window._leads||[]).find(x=>x.id===id);const stages=window.STAGES||[];const i=stages.findIndex(s=>s.id===l.stage),n=stages[i+dir];if(n){l.stage=n.id;await window.saveLead(l);}}
 
+function getCamposFaltando(l){
+  const falta=[];
+  if(!l.nome)falta.push('Nome');
+  if(!l.cidade)falta.push('Cidade');
+  if(!l.nomeContato)falta.push('Contato');
+  if(!l.contato)falta.push('Telefone');
+  if(!l.email)falta.push('E-mail');
+  if(!l.followup)falta.push('Follow-up');
+  return falta;
+}
+
+function renderEditAlerts(l){
+  const falta=getCamposFaltando(l);
+  const el=document.getElementById('editAlerts');
+  if(!falta.length){el.innerHTML='<span style="font-size:11px;color:var(--success);display:flex;align-items:center;gap:3px"><i class="ti ti-circle-check"></i> Completo</span>';return;}
+  el.innerHTML=falta.map(f=>`<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(224,96,48,.15);color:#E06030;border:1px solid rgba(224,96,48,.25)">${f}</span>`).join('');
+}
+
 function openEdit(id){
   window._editingId=id;const l=(window._leads||[]).find(x=>x.id===id);
   document.getElementById('editTitle').textContent=l.nome;
-  document.getElementById('eNome').value=l.nome;document.getElementById('eCidade').value=l.cidade||'';
-  document.getElementById('eSeg').value=l.seg;document.getElementById('eContato').value=l.contato||'';
-  document.getElementById('eFonte').value=l.fonte||'Instagram';document.getElementById('eFollowup').value=l.followup||'';
-  document.getElementById('eNotas').value=l.notas||'';document.getElementById('eScore').value=l.score||'';
+  document.getElementById('eNome').value=l.nome||'';
+  document.getElementById('eCidade').value=l.cidade||'';
+  document.getElementById('eSeg').value=l.seg||'?';
+  document.getElementById('eNomeContato').value=l.nomeContato||'';
+  document.getElementById('eContato').value=l.contato||'';
+  document.getElementById('eEmail').value=l.email||'';
+  document.getElementById('eInstagram').value=l.instagram||'';
+  document.getElementById('eSite').value=l.site||'';
+  document.getElementById('eFonte').value=l.fonte||'Instagram';
+  document.getElementById('eFollowup').value=l.followup||'';
+  document.getElementById('eNotas').value=l.notas||'';
+  document.getElementById('eScore').value=l.score||'';
   document.getElementById('eStages').innerHTML=(window.STAGES||[]).map(s=>`<button class="msb${l.stage===s.id?' cur':''}" onclick="setEditStage('${s.id}',this)">${s.label}</button>`).join('');
+  renderEditAlerts(l);
   openModal('editModal');
 }
 
@@ -736,10 +849,18 @@ function setEditStage(sid,btn){document.querySelectorAll('#eStages .msb').forEac
 
 async function saveEdit(){
   const l=(window._leads||[]).find(x=>x.id===window._editingId);
-  l.nome=document.getElementById('eNome').value.trim()||l.nome;l.cidade=document.getElementById('eCidade').value.trim();
-  l.seg=document.getElementById('eSeg').value;l.contato=document.getElementById('eContato').value.trim();
-  l.fonte=document.getElementById('eFonte').value;l.followup=document.getElementById('eFollowup').value.trim();
-  l.notas=document.getElementById('eNotas').value.trim();l.score=document.getElementById('eScore').value;
+  l.nome=document.getElementById('eNome').value.trim()||l.nome;
+  l.cidade=document.getElementById('eCidade').value.trim();
+  l.seg=document.getElementById('eSeg').value;
+  l.nomeContato=document.getElementById('eNomeContato').value.trim();
+  l.contato=document.getElementById('eContato').value.trim();
+  l.email=document.getElementById('eEmail').value.trim();
+  l.instagram=document.getElementById('eInstagram').value.trim();
+  l.site=document.getElementById('eSite').value.trim();
+  l.fonte=document.getElementById('eFonte').value;
+  l.followup=document.getElementById('eFollowup').value.trim();
+  l.notas=document.getElementById('eNotas').value.trim();
+  l.score=document.getElementById('eScore').value;
   await window.saveLead(l);closeModal('editModal');toast('Salvo ✓');
 }
 
@@ -748,8 +869,20 @@ async function delCard(id,e){e.stopPropagation();if(!confirm('Remover?'))return;
 
 async function saveNewLead(){
   const nome=document.getElementById('nNome').value.trim();if(!nome){alert('Informe o nome');return;}
-  await window.saveLead({id:gid(),nome,cidade:document.getElementById('nCidade').value.trim(),seg:document.getElementById('nSeg').value,contato:document.getElementById('nContato').value.trim(),fonte:document.getElementById('nFonte').value,followup:document.getElementById('nFollowup').value.trim(),notas:document.getElementById('nNotas').value.trim(),stage:document.getElementById('nStage').value});
-  closeModal('newLeadModal');toast('Adicionado ✓');['nNome','nCidade','nContato','nFollowup','nNotas'].forEach(i=>document.getElementById(i).value='');
+  await window.saveLead({id:gid(),nome,
+    cidade:document.getElementById('nCidade').value.trim(),
+    seg:document.getElementById('nSeg').value,
+    nomeContato:document.getElementById('nNomeContato').value.trim(),
+    contato:document.getElementById('nContato').value.trim(),
+    email:document.getElementById('nEmail').value.trim(),
+    instagram:document.getElementById('nInstagram').value.trim(),
+    site:document.getElementById('nSite').value.trim(),
+    fonte:document.getElementById('nFonte').value,
+    followup:document.getElementById('nFollowup').value.trim(),
+    notas:document.getElementById('nNotas').value.trim(),
+    stage:document.getElementById('nStage').value});
+  closeModal('newLeadModal');toast('Adicionado ✓');
+  ['nNome','nCidade','nNomeContato','nContato','nEmail','nInstagram','nSite','nFollowup','nNotas'].forEach(i=>document.getElementById(i).value='');
 }
 
 // AGENDA
