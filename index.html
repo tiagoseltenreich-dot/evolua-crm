@@ -628,7 +628,7 @@ setTimeout(()=>{import("https://www.gstatic.com/firebasejs/10.12.0/firebase-fire
 </script>
 
 <script>
-const GEMINI_KEY='AIzaSyD_7Ih84isJCMaEsBPXZESNnMfjFZdCiT4';
+const GEMINI_KEY='';
 let _aiProvider='claude';
 let _copyChannel='WhatsApp',_copyChannelModal='WhatsApp';
 let _prospLeads=[],_currentPerfil=null;
@@ -651,13 +651,13 @@ function setAI(p){
   toast(p==='claude'?'Usando Claude (Anthropic)':'Usando Gemini (Google — gratuito)');
 }
 
-async function callAI(prompt){
+async function callAI(prompt, jsonMode=false){
   if(_aiProvider==='gemini'){
     const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
     const data=await res.json();
     return data.candidates?.[0]?.content?.parts?.[0]?.text||'';
   } else {
-    const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})});
+    const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],jsonMode})});
     const data=await res.json();
     return data.content?.map(i=>i.text||'').join('')||'';
   }
@@ -967,21 +967,42 @@ function renderAgentes(){
 
 // PROSPECÇÃO
 async function buscarImobiliarias(){
-  const cidade=document.getElementById('pCidade').value.trim()||'Porto Alegre, RS';
-  const porte=document.getElementById('pPorte').value,sinal=document.getElementById('pSinal').value;
-  document.getElementById('prospResults').innerHTML=`<div style="text-align:center;padding:32px;color:var(--text3)"><div class="spinner" style="margin:0 auto 12px"></div><div style="font-size:13px">Buscando em ${cidade}...</div></div>`;
-  const prompt=`Você é um Hunter Agent especializado no mercado imobiliário brasileiro.
-Gere 6 imobiliárias FICTÍCIAS mas realistas para ${cidade}${porte?' de porte '+porte:''}.${sinal?' Foco: '+sinal+'.':''}
-Retorne SOMENTE JSON válido sem markdown:
-{"leads":[{"nome":"...","cidade":"${cidade}","porte":"Pequena|Média|Grande","score":0-100,"instagram":"@...","linkedin":"linkedin.com/company/...","site":"www...","decisor":"Nome","cargo":"Cargo","telefone":"(51) 9...","sinais":["sinal1","sinal2"],"imoveis_estimados":"30-50","fundado":"2018"}]}
-Use nomes realistas do mercado imobiliário brasileiro.`;
+  const cidadeInput=document.getElementById('pCidade').value.trim()||'Porto Alegre, RS';
+  const partes=cidadeInput.split(',');
+  const cidade=partes[0].trim();
+  const estado=partes[1]?partes[1].trim():'';
+  const porte=document.getElementById('pPorte').value;
+  const sinal=document.getElementById('pSinal').value;
+
+  document.getElementById('prospResults').innerHTML=`<div style="text-align:center;padding:32px;color:var(--text3)"><div class="spinner" style="margin:0 auto 12px"></div><div style="font-size:13px">Buscando imobiliárias em ${cidadeInput}...</div></div>`;
+
+  const prompt=`Gere exatamente 6 imobiliárias fictícias mas com nomes e dados realistas do mercado imobiliário brasileiro, localizadas especificamente na cidade de ${cidade}${estado?' no estado de '+estado:''}.${porte?' Porte: '+porte+'.':''}${sinal?' Sinal de crescimento: '+sinal+'.':''}
+
+Retorne APENAS este objeto JSON, sem nenhum texto antes ou depois:
+{"leads":[{"nome":"Nome Imobiliária","cidade":"${cidadeInput}","porte":"Pequena","score":72,"instagram":"@nomeimobiliaria","site":"www.nomeimobiliaria.com.br","decisor":"Nome Decisor","cargo":"Diretor Comercial","telefone":"(47) 99999-9999","sinais":["Instagram ativo","Equipe crescendo"],"imoveis_estimados":"40-60","fundado":"2015"}]}
+
+Regras:
+- Exatamente 6 imobiliárias no array "leads"
+- Nomes realistas do mercado imobiliário da região
+- Score entre 50 e 95
+- Telefones com DDD correto para a região
+- JSON puro e válido, sem comentários`;
+
   try{
-    const txt=await callAI(prompt);
-    const clean=txt.replace(/```json|```/g,'').trim();
-    _prospLeads=JSON.parse(clean).leads||[];
+    const txt=await callAI(prompt, true);
+    // Limpeza robusta do JSON
+    let clean=txt.trim();
+    clean=clean.replace(/```json/gi,'').replace(/```/g,'').trim();
+    // Extrai o JSON mesmo se vier com texto ao redor
+    const match=clean.match(/\{[\s\S]*\}/);
+    if(!match)throw new Error('JSON não encontrado na resposta');
+    const parsed=JSON.parse(match[0]);
+    _prospLeads=parsed.leads||[];
+    if(!_prospLeads.length)throw new Error('Nenhum lead retornado');
     renderProspResults();
   }catch(e){
-    document.getElementById('prospResults').innerHTML=`<div style="text-align:center;padding:32px;color:#E24B4A;font-size:13px"><i class="ti ti-alert-circle" style="font-size:24px;display:block;margin-bottom:8px"></i>Erro ao buscar. Tente novamente.</div>`;
+    console.error('Erro prospecção:',e);
+    document.getElementById('prospResults').innerHTML=`<div style="text-align:center;padding:32px;color:#E24B4A;font-size:13px"><i class="ti ti-alert-circle" style="font-size:24px;display:block;margin-bottom:8px"></i>Erro ao buscar. Verifique se a IA Claude está selecionada e tente novamente.</div>`;
   }
 }
 
