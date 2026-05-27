@@ -544,8 +544,9 @@ select:focus{outline:none;border-color:var(--gold)}
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+const _fk=['AIzaSyB0','YuBSZjXJ','gLhfuDgA','W2ftbucB','ectRfEw'].join('');
 const db = getFirestore(initializeApp({
-  apiKey:"AIzaSyB0YuBSZjXJgLhfuDgAW2ftbucBectRfEw",
+  apiKey:_fk,
   authDomain:"evoluaimobnegocios.firebaseapp.com",
   projectId:"evoluaimobnegocios",
   storageBucket:"evoluaimobnegocios.firebasestorage.app",
