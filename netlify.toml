@@ -2,3 +2,9 @@
   from = "/api/claude"
   to = "/.netlify/functions/claude"
   status = 200
+
+[functions]
+  node_bundler = "esbuild"
+
+[functions."claude"]
+  timeout = 30
