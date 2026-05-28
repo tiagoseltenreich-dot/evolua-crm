@@ -315,9 +315,12 @@ select:focus{outline:none;border-color:var(--gold)}
     <div class="sb-item" onclick="nav('cadencia',this)"><i class="ti ti-messages"></i> Cadência de Abordagem</div>
     <div class="sb-section" style="margin-top:12px">IA & Prospecção</div>
     <div class="sb-item ai-item" onclick="nav('prospeccao',this)"><i class="ti ti-radar"></i> Prospecção IA</div>
+    <div class="sb-item ai-item" onclick="nav('qualificacao',this)"><i class="ti ti-user-search"></i> Qualificação IA</div>
+    <div class="sb-item ai-item" onclick="nav('cadenciauto',this)"><i class="ti ti-send"></i> Cadência Automática</div>
     <div class="sb-item ai-item" onclick="nav('agentes',this)"><i class="ti ti-robot"></i> Agentes</div>
     <div class="sb-section" style="margin-top:12px">Gestão</div>
     <div class="sb-item" onclick="nav('clientes',this)"><i class="ti ti-building"></i> Clientes Ativos</div>
+    <div class="sb-item" onclick="nav('config',this)"><i class="ti ti-settings"></i> Configurações</div>
     <div class="sb-item admin-only" style="display:none" onclick="nav('usuarios',this)"><i class="ti ti-users"></i> Usuários</div>
   </div>
   <div class="sb-bottom">
@@ -419,6 +422,9 @@ select:focus{outline:none;border-color:var(--gold)}
 
     <div class="page" id="page-clientes"><div id="clientesContent"></div></div>
     <div class="page" id="page-usuarios"><div id="usuariosContent"></div></div>
+    <div class="page" id="page-qualificacao"><div id="qualificacaoContent"></div></div>
+    <div class="page" id="page-cadenciauto"><div id="cadenciautoContent"></div></div>
+    <div class="page" id="page-config"><div id="configContent"></div></div>
 
   </div>
 </div>
@@ -536,6 +542,23 @@ select:focus{outline:none;border-color:var(--gold)}
   </div>
   <div id="pmBody"></div>
   <div class="mactions"><button class="btn bsm btn-ai" onclick="adicionarAoPipeline()"><i class="ti ti-layout-kanban"></i> Adicionar ao pipeline</button><button class="btn bsm" onclick="closeModal('perfilModal')">Fechar</button></div>
+</div></div>
+
+<!-- MODAL EDITAR MENSAGEM CADÊNCIA -->
+<div class="moverlay" id="editMsgModal"><div class="mbox wide">
+  <h3><i class="ti ti-message-edit" style="color:var(--ai2)"></i> Editar mensagem — <span id="editMsgDia" style="color:var(--text2)"></span></h3>
+  <div id="editMsgAssuntoRow">
+    <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px;margin-top:0">Assunto do e-mail</label>
+    <input id="editMsgAssunto" type="text" style="width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--navy3);color:var(--text);font-family:'Barlow',sans-serif;margin-bottom:10px">
+  </div>
+  <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Mensagem</label>
+  <textarea id="editMsgTexto" rows="10" style="width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--navy3);color:var(--text);font-family:'Barlow',sans-serif;resize:vertical"></textarea>
+  <div style="font-size:10px;color:var(--text3);margin-top:6px">Variáveis disponíveis: <code style="background:var(--navy3);padding:1px 4px;border-radius:3px">{nome}</code> <code style="background:var(--navy3);padding:1px 4px;border-radius:3px">{imobiliaria}</code> <code style="background:var(--navy3);padding:1px 4px;border-radius:3px">{cidade}</code> <code style="background:var(--navy3);padding:1px 4px;border-radius:3px">{site}</code></div>
+  <div class="mactions">
+    <button class="btn bsm btn-ai" onclick="gerarMensagemIA(window._editingMsgIdx)"><i class="ti ti-sparkles"></i> Regerar com IA</button>
+    <button class="btn bsm" onclick="closeModal('editMsgModal')">Cancelar</button>
+    <button class="btn btn-gold bsm" onclick="salvarMensagem()">Salvar</button>
+  </div>
 </div></div>
 
 <div class="toast" id="toast"></div>
@@ -703,8 +726,8 @@ function nav(page,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
-  el.classList.add('active');
-  const titles={dashboard:'Dashboard',pipeline:'Pipeline SDR',agenda:'Agenda de Follow-up',cadencia:'Cadência de Abordagem',prospeccao:'Prospecção IA',agentes:'Agentes IA',clientes:'Clientes Ativos',usuarios:'Usuários'};
+  if(el)el.classList.add('active');
+  const titles={dashboard:'Dashboard',pipeline:'Pipeline SDR',agenda:'Agenda de Follow-up',cadencia:'Cadência de Abordagem',prospeccao:'Prospecção IA',qualificacao:'Qualificação IA',cadenciauto:'Cadência Automática',agentes:'Agentes IA',clientes:'Clientes Ativos',config:'Configurações',usuarios:'Usuários'};
   document.getElementById('topbarTitle').textContent=titles[page]||page;
   const ta=document.getElementById('topbarActions');
   const aiSel=`<div class="ai-selector"><span class="ai-sel-label">IA:</span><button class="ai-sel-btn${_aiProvider==='claude'?' active':''}" id="btnClaude" onclick="setAI('claude')">Claude</button><button class="ai-sel-btn gemini${_aiProvider==='gemini'?' active':''}" id="btnGemini" onclick="setAI('gemini')">Gemini</button></div>`;
@@ -720,6 +743,9 @@ function nav(page,el){
   if(page==='cadencia')renderCadencia();
   if(page==='agentes')renderAgentes();
   if(page==='usuarios')renderUsuarios();
+  if(page==='qualificacao')renderQualificacao();
+  if(page==='cadenciauto')renderCadenciauto();
+  if(page==='config')renderConfig();
 }
 
 function renderAll(){renderDashboard();renderPipeline();}
@@ -1072,6 +1098,450 @@ async function gerarCopyModal(){
 
 function copiarTexto(){navigator.clipboard.writeText(document.getElementById('copyText').innerText).then(()=>toast('Copiado ✓'));}
 function copiarTextoModal(){navigator.clipboard.writeText(document.getElementById('copyModalText').innerText).then(()=>toast('Copiado ✓'));}
+
+// =============================================
+// QUALIFICAÇÃO IA
+// =============================================
+function renderQualificacao(){
+  const leads=(window._leads||[]).filter(l=>l.stage==='prospect'||l.stage==='contato');
+  const el=document.getElementById('qualificacaoContent');
+  if(!el)return;
+  el.innerHTML=`
+  <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--text)">Qualificação de Leads</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:2px">IA busca decisor, e-mail e telefone automaticamente</div>
+    </div>
+    <button class="btn btn-ai" onclick="qualificarTodos()"><i class="ti ti-sparkles"></i> Qualificar todos pendentes</button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px" id="qualLista">
+    ${leads.length?leads.map(l=>{
+      const qualif=l.qualificado;
+      return`<div class="dash-card" style="padding:14px 16px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="flex:1">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--text)">${esc(l.nome)}</div>
+            <div style="font-size:11px;color:var(--text3)">${esc(l.cidade||'—')} · ${esc(l.fonte||'—')}</div>
+            ${qualif?`<div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap">
+              ${l.nomeContato?`<span style="font-size:11px;color:var(--text2)"><i class="ti ti-user" style="font-size:10px"></i> ${esc(l.nomeContato)}</span>`:''}
+              ${l.contato?`<span style="font-size:11px;color:var(--text2)"><i class="ti ti-phone" style="font-size:10px"></i> ${esc(l.contato)}</span>`:''}
+              ${l.email?`<span style="font-size:11px;color:var(--text2)"><i class="ti ti-mail" style="font-size:10px"></i> ${esc(l.email)}</span>`:''}
+              ${l.instagram?`<span style="font-size:11px;color:var(--ai2)"><i class="ti ti-brand-instagram" style="font-size:10px"></i> ${esc(l.instagram)}</span>`:''}
+            </div>`:''}
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            ${qualif?`<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(29,158,117,.15);color:var(--success);border:1px solid rgba(29,158,117,.25)">Qualificado</span>`:''}
+            <button class="btn bsm btn-ai" onclick="qualificarLead('${l.id}',this)"><i class="ti ti-sparkles"></i> ${qualif?'Reatualizar':'Qualificar'}</button>
+            <button class="btn bsm" onclick="openEdit('${l.id}')"><i class="ti ti-pencil"></i></button>
+          </div>
+        </div>
+        <div id="qual_result_${l.id}" style="display:none;margin-top:10px;padding:10px;background:var(--navy3);border-radius:var(--r);font-size:12px;color:var(--text2);line-height:1.6"></div>
+      </div>`;
+    }).join(''):`<div class="placeholder"><i class="ti ti-user-check"></i><h3>Nenhum lead para qualificar</h3><p>Adicione prospects no pipeline primeiro.</p></div>`}
+  </div>`;
+}
+
+async function qualificarLead(id, btn){
+  const l=(window._leads||[]).find(x=>x.id===id);
+  if(!l)return;
+  const resultEl=document.getElementById('qual_result_'+id);
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="ai-typing"></span>';}
+  if(resultEl){resultEl.style.display='block';resultEl.innerHTML='<span class="ai-typing"></span> Buscando informações...';}
+
+  const prompt=`Você é um especialista em pesquisa B2B no mercado imobiliário brasileiro.
+Pesquise e retorne informações sobre a imobiliária "${l.nome}" localizada em ${l.cidade||'Brasil'}.
+Site: ${l.site||'não informado'}. Instagram: ${l.instagram||'não informado'}.
+
+Retorne APENAS JSON válido:
+{"nomeContato":"Nome do decisor/dono/diretor","cargo":"Cargo","telefone":"(XX) XXXXX-XXXX","email":"email@imobiliaria.com.br","linkedin":"linkedin.com/in/...","sinais":["sinal1","sinal2"],"resumo":"2 frases sobre a empresa","fonte":"Como você encontrou essas informações"}
+
+Se não encontrar algum dado, use string vazia. Seja realista — se não tiver certeza, indique que é estimado.`;
+
+  try{
+    const txt=await callAI(prompt,true);
+    const clean=txt.replace(/```json|```/g,'').trim();
+    const match=clean.match(/\{[\s\S]*\}/);
+    if(!match)throw new Error('JSON inválido');
+    const data=JSON.parse(match[0]);
+
+    // Atualiza o lead com os dados encontrados
+    if(data.nomeContato)l.nomeContato=data.nomeContato;
+    if(data.cargo)l.cargo=data.cargo;
+    if(data.telefone&&!l.contato)l.contato=data.telefone;
+    if(data.email&&!l.email)l.email=data.email;
+    if(data.linkedin)l.linkedin=data.linkedin;
+    if(data.sinais&&data.sinais.length)l.sinaisQual=data.sinais;
+    l.qualificado=true;
+    l.qualificadoEm=new Date().toLocaleDateString('pt-BR');
+    await window.saveLead(l);
+
+    if(resultEl){
+      resultEl.innerHTML=`
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          ${data.nomeContato?`<div><span style="color:var(--text3)">Decisor:</span> <strong style="color:var(--text)">${esc(data.nomeContato)}</strong>${data.cargo?` · ${esc(data.cargo)}`:''}</div>`:''}
+          ${data.telefone?`<div><span style="color:var(--text3)">Telefone:</span> <strong style="color:var(--text)">${esc(data.telefone)}</strong></div>`:''}
+          ${data.email?`<div><span style="color:var(--text3)">E-mail:</span> <strong style="color:var(--text)">${esc(data.email)}</strong></div>`:''}
+          ${data.linkedin?`<div><span style="color:var(--text3)">LinkedIn:</span> <strong style="color:var(--ai2)">${esc(data.linkedin)}</strong></div>`:''}
+        </div>
+        ${data.resumo?`<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border);color:var(--text3);font-style:italic">${esc(data.resumo)}</div>`:''}
+        ${data.sinais&&data.sinais.length?`<div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap">${data.sinais.map(s=>`<span style="font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(55,138,221,.1);color:var(--info);border:1px solid rgba(55,138,221,.15)">${esc(s)}</span>`).join('')}</div>`:''}
+        <div style="margin-top:4px;font-size:10px;color:var(--text3)">Fonte: ${esc(data.fonte||'IA')}</div>`;
+    }
+    toast(`${l.nome} qualificado ✓`);
+  }catch(e){
+    if(resultEl)resultEl.innerHTML=`<span style="color:#E24B4A">Erro ao qualificar. Tente novamente.</span>`;
+  }finally{
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-sparkles"></i> Reatualizar';}
+  }
+}
+
+async function qualificarTodos(){
+  const leads=(window._leads||[]).filter(l=>!l.qualificado&&(l.stage==='prospect'||l.stage==='contato'));
+  if(!leads.length){toast('Nenhum lead pendente');return;}
+  toast(`Qualificando ${leads.length} leads...`);
+  for(const l of leads.slice(0,5)){// máx 5 por vez para não estourar timeout
+    await qualificarLead(l.id,null);
+    await new Promise(r=>setTimeout(r,1000));// espera 1s entre chamadas
+  }
+  toast('Qualificação concluída ✓');
+}
+
+// =============================================
+// CADÊNCIA AUTOMÁTICA
+// =============================================
+const CADENCIA_PADRAO=[
+  {dia:1,canal:'whatsapp',fase:'Despertar',assunto:'',msg:`Oi {nome}, tudo bem? Sou o Tiago Seltenreich, consultor de gestão para imobiliárias. Pergunta rápida: quantos imóveis você tem parados na carteira hoje sem alugar?\n\nSe quiser bater um papo rápido sobre isso, é só falar. 😊`,ativo:true},
+  {dia:3,canal:'email',fase:'Despertar',assunto:'Imóvel parado é dinheiro que você já perdeu',msg:`{nome},\n\nToda imobiliária tem aquele imóvel que tá na carteira faz 3, 4 meses e não aluga. O proprietário liga toda semana. Você não sabe o que responder.\n\nO problema quase nunca é o imóvel. É o processo de visita que tá quebrado.\n\nVisita mal agendada, lead mal qualificado, proposta que demora 2 dias para sair — e o inquilino fecha com a imobiliária da esquina.\n\nVocê sabe quantas visitas sua equipe faz por semana? E quantas viram contrato?\n\nAté mais,\nTiago Seltenreich\nConsultor de gestão para imobiliárias`,ativo:true},
+  {dia:6,canal:'whatsapp',fase:'Despertar',assunto:'',msg:`{nome}, te mandei um e-mail semana passada sobre visitas que não viram contrato. A maioria das imobiliárias que atendo perde entre 60% e 70% dos interessados nessa etapa.\n\nIsso acontece aí também?\n\nSe quiser, posso te mostrar como resolver isso. Dá uma olhada no nosso site: {site}`,ativo:true},
+  {dia:10,canal:'email',fase:'Despertar',assunto:'Checklist gratuito: por que seu imóvel não está alugando',msg:`{nome},\n\nPreparei um checklist direto que uso nas imobiliárias que atendo para identificar por que os imóveis travam na carteira.\n\nSão 12 pontos. A maioria descobre que o problema está em 2 ou 3 deles.\n\nSe quiser receber, é só responder esse e-mail.\n\nTiago`,ativo:true},
+  {dia:15,canal:'whatsapp',fase:'Despertar',assunto:'',msg:`{nome}, desocupação é um dos maiores pesadelos de quem trabalha com locação. Vistoria mal feita, prazo estourado, proprietário na jugular.\n\nVocê tem um processo definido para isso ou vai resolvendo conforme aparece?\n\nVamos tomar um café virtual que eu te conto como outras imobiliárias resolveram isso. 😉`,ativo:true},
+  {dia:21,canal:'email',fase:'Despertar',assunto:'Inadimplência: o problema que ninguém quer ver antes de virar grande',msg:`{nome},\n\nInquilino atrasando é rotina em qualquer imobiliária. O que separa quem controla de quem se afoga nisso é simples: processo de cobrança que funciona antes de virar dívida.\n\nA maioria das imobiliárias começa a cobrar quando já tá em 60 dias de atraso. Aí é tarde.\n\nTrabalhei na Guarida Imóveis por anos. Lá a gente tinha protocolo para acionar o inquilino no dia 3 de atraso. Não no dia 30.\n\nA diferença no índice de inadimplência era brutal.\n\nQuer saber como montar isso na sua operação? Me responde esse e-mail ou acessa {site}.\n\nTiago`,ativo:true},
+  {dia:28,canal:'whatsapp',fase:'Amadurecimento',assunto:'',msg:`{nome}, pergunta direta: quando um proprietário liga reclamando que o aluguel não caiu, sua equipe tem resposta na hora ou precisa correr atrás do financeiro?\n\nEsse tipo de situação toma quanto tempo do seu dia?\n\nVamos tomar um café que eu te falo como resolver isso de vez.`,ativo:true},
+  {dia:35,canal:'email',fase:'Amadurecimento',assunto:'Diagnóstico gratuito — 3 vagas este mês',msg:`{nome},\n\nTodo mês abro 3 vagas para fazer um diagnóstico gratuito de 30 minutos com gestores de imobiliária.\n\nA gente olha junto: carteira parada, processo de visita, desocupação e inadimplência.\n\nSem apresentação. Sem proposta no final. Só análise.\n\nQuer uma vaga? Me responde esse e-mail.\n\nTiago\nVeja mais em: {site}`,ativo:true},
+  {dia:42,canal:'whatsapp',fase:'Amadurecimento',assunto:'',msg:`{nome}, essa semana finalizei o trabalho com uma imobiliária em SC. Eles tinham 23 imóveis parados. Em 6 semanas, 14 foram alugados.\n\nO que mudou foi o processo de qualificação do interessado antes da visita. Simples assim.\n\nPosso te mostrar como funciona? Dá uma olhada: {site}`,ativo:true},
+  {dia:50,canal:'email',fase:'Amadurecimento',assunto:'Quanto custa uma desocupação mal feita na sua imobiliária?',msg:`{nome},\n\nFiz a conta com uma imobiliária que atendi recentemente:\n\n— Vistoria de saída feita errado: proprietário exigiu reforma que não era responsabilidade do inquilino\n— Processo demorou 4 meses para resolver\n— Imóvel ficou 4 meses sem alugar\n— Prejuízo total: R$ 14.800\n\nTudo por falta de um checklist de desocupação.\n\nVocê tem esse processo mapeado hoje?\n\nTiago`,ativo:true},
+  {dia:60,canal:'whatsapp',fase:'Amadurecimento',assunto:'',msg:`{nome}, faz dois meses que a gente tem esse contato.\n\nQuero ser direto: pelo que sei sobre o mercado de locação, acho que dá para alugar mais e ter menos problema operacional na sua imobiliária.\n\nMe dá 30 minutos essa semana? Sem apresentação. Só análise.\n\nVamos tomar um café? ☕`,ativo:true},
+];
+
+window._cadencias=[];
+window._editingCadenciaId=null;
+window._editingMsgIdx=null;
+
+function renderCadenciauto(){
+  const el=document.getElementById('cadenciautoContent');
+  if(!el)return;
+
+  // Carrega cadências do Firebase ou usa padrão
+  const cads=window._cadencias||[];
+
+  el.innerHTML=`
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--text)">Cadência Automática</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:2px">Configure sequências de WhatsApp e e-mail para seus prospects</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn bsm" onclick="openNovaCadencia()"><i class="ti ti-plus"></i> Nova cadência</button>
+    </div>
+  </div>
+
+  <!-- CADÊNCIA EVOLUA (PADRÃO) -->
+  <div class="dash-card" style="margin-bottom:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--text)">Cadência Evolua <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(29,158,117,.15);color:var(--success);border:1px solid rgba(29,158,117,.25);margin-left:6px">Ativa</span></div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">60 dias · ${CADENCIA_PADRAO.length} toques · WhatsApp + E-mail intercalados</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn bsm" onclick="verLeadsCadencia()"><i class="ti ti-users"></i> Ver leads (${(window._leads||[]).filter(l=>l.cadenciaAtiva).length})</button>
+        <button class="btn bsm btn-gold" onclick="ativarCadenciaParaLeads()"><i class="ti ti-player-play"></i> Ativar para prospects</button>
+      </div>
+    </div>
+
+    <!-- TIMELINE DAS MENSAGENS -->
+    <div style="display:flex;flex-direction:column;gap:0">
+      ${CADENCIA_PADRAO.map((m,i)=>`
+      <div style="display:flex;gap:12px;position:relative">
+        ${i<CADENCIA_PADRAO.length-1?`<div style="position:absolute;left:15px;top:32px;width:1px;height:calc(100% - 8px);background:var(--border)"></div>`:''}
+        <div style="width:31px;height:31px;border-radius:50%;border:2px solid ${m.canal==='whatsapp'?'rgba(37,211,102,.4)':'rgba(212,160,51,.4)'};background:${m.canal==='whatsapp'?'rgba(37,211,102,.08)':'rgba(212,160,51,.08)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:6px;position:relative;z-index:1">
+          <i class="ti ${m.canal==='whatsapp'?'ti-brand-whatsapp':'ti-mail'}" style="font-size:13px;color:${m.canal==='whatsapp'?'#25D366':'var(--gold)'}"></i>
+        </div>
+        <div style="flex:1;padding:6px 0 16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+            <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--text)">Dia ${m.dia}</span>
+            <span style="font-size:10px;padding:1px 6px;border-radius:4px;background:${m.fase==='Despertar'?'rgba(55,138,221,.1)':'rgba(224,96,48,.1)'};color:${m.fase==='Despertar'?'var(--info)':'var(--orange)'};">${m.fase}</span>
+            <span style="font-size:10px;color:var(--text3);text-transform:uppercase">${m.canal==='whatsapp'?'WhatsApp':'E-mail'}</span>
+          </div>
+          ${m.assunto?`<div style="font-size:11px;color:var(--text2);margin-bottom:3px"><strong>Assunto:</strong> ${esc(m.assunto)}</div>`:''}
+          <div style="font-size:11px;color:var(--text3);background:var(--navy3);padding:8px 10px;border-radius:6px;border:1px solid var(--border);max-height:60px;overflow:hidden;cursor:pointer;white-space:pre-line" onclick="editarMensagem(${i})">${esc(m.msg.substring(0,120))}${m.msg.length>120?'...':''}</div>
+          <div style="margin-top:5px;display:flex;gap:5px">
+            <button class="btn bsm" onclick="editarMensagem(${i})"><i class="ti ti-pencil"></i> Editar</button>
+            <button class="btn bsm btn-ai" onclick="gerarMensagemIA(${i})"><i class="ti ti-sparkles"></i> Gerar com IA</button>
+          </div>
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+  <!-- CONFIGURAÇÕES DE ENVIO -->
+  <div class="dash-card">
+    <h3><i class="ti ti-settings" style="color:var(--gold)"></i> Configurações de Envio</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px"><i class="ti ti-brand-whatsapp" style="color:#25D366"></i> WhatsApp (Z-API)</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Status: <span id="zapStatus" style="color:${window._config?.zapKey?'var(--success)':'#E24B4A'}">${window._config?.zapKey?'Conectado':'Não configurado'}</span></div>
+        <button class="btn bsm" onclick="nav('config',document.querySelector('[onclick*=\"config\"]'))"><i class="ti ti-settings"></i> Configurar</button>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px"><i class="ti ti-mail" style="color:var(--gold)"></i> E-mail (Brevo)</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Status: <span id="brevoStatus" style="color:${window._config?.brevoKey?'var(--success)':'#E24B4A'}">${window._config?.brevoKey?'Conectado':'Não configurado'}</span></div>
+        <button class="btn bsm" onclick="nav('config',document.querySelector('[onclick*=\"config\"]'))"><i class="ti ti-settings"></i> Configurar</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function editarMensagem(idx){
+  const m=CADENCIA_PADRAO[idx];
+  window._editingMsgIdx=idx;
+  document.getElementById('editMsgDia').textContent=`Dia ${m.dia} — ${m.canal==='whatsapp'?'WhatsApp':'E-mail'}`;
+  document.getElementById('editMsgAssunto').value=m.assunto||'';
+  document.getElementById('editMsgAssuntoRow').style.display=m.canal==='email'?'block':'none';
+  document.getElementById('editMsgTexto').value=m.msg;
+  openModal('editMsgModal');
+}
+
+function salvarMensagem(){
+  const idx=window._editingMsgIdx;
+  if(idx===null||idx===undefined)return;
+  CADENCIA_PADRAO[idx].assunto=document.getElementById('editMsgAssunto').value;
+  CADENCIA_PADRAO[idx].msg=document.getElementById('editMsgTexto').value;
+  closeModal('editMsgModal');
+  toast('Mensagem salva ✓');
+  renderCadenciauto();
+}
+
+async function gerarMensagemIA(idx){
+  const m=CADENCIA_PADRAO[idx];
+  window._editingMsgIdx=idx;
+  document.getElementById('editMsgDia').textContent=`Dia ${m.dia} — ${m.canal==='whatsapp'?'WhatsApp':'E-mail'}`;
+  document.getElementById('editMsgAssunto').value=m.assunto||'';
+  document.getElementById('editMsgAssuntoRow').style.display=m.canal==='email'?'block':'none';
+  document.getElementById('editMsgTexto').value='Gerando com IA...';
+  openModal('editMsgModal');
+
+  const prompt=`Você é Tiago Seltenreich, consultor de gestão para imobiliárias brasileiras.
+Escreva uma mensagem de ${m.canal==='whatsapp'?'WhatsApp':'e-mail'} para o Dia ${m.dia} da cadência de prospecção.
+Fase: ${m.fase}. Tom: direto, sem firula, português claro.
+Dores reais: imóveis parados, desocupação, inadimplência, proprietário cobrando, processo de visita quebrado.
+${m.canal==='email'?'Inclua linha "Assunto: ..." no início.':'Mensagem curta, parece conversa real, não marketing.'}
+Use {nome} para o nome do prospect e {site} para o link do site.
+CTA: "vamos tomar um café" (conversa) ou "dá uma olhada no site: {site}" (validação).
+Retorne APENAS o texto da mensagem, sem explicações.`;
+
+  try{
+    const txt=await callAI(prompt);
+    document.getElementById('editMsgTexto').value=txt.trim();
+  }catch(e){
+    document.getElementById('editMsgTexto').value=m.msg;
+    toast('Erro ao gerar. Usando texto original.');
+  }
+}
+
+async function ativarCadenciaParaLeads(){
+  const leads=(window._leads||[]).filter(l=>l.stage==='prospect'&&!l.cadenciaAtiva);
+  if(!leads.length){toast('Nenhum prospect sem cadência ativa');return;}
+  if(!confirm(`Ativar cadência para ${leads.length} prospects?`))return;
+  for(const l of leads){
+    l.cadenciaAtiva=true;
+    l.cadenciaInicio=new Date().toISOString().split('T')[0];
+    l.cadenciaDiaAtual=0;
+    await window.saveLead(l);
+  }
+  toast(`Cadência ativada para ${leads.length} prospects ✓`);
+  renderCadenciauto();
+}
+
+function verLeadsCadencia(){
+  const leads=(window._leads||[]).filter(l=>l.cadenciaAtiva);
+  // Navega para o pipeline filtrado
+  nav('pipeline',document.querySelector('[onclick*="pipeline"]'));
+  toast(`${leads.length} leads com cadência ativa`);
+}
+
+// =============================================
+// CONFIGURAÇÕES
+// =============================================
+window._config={zapKey:'',zapInstance:'',brevoKey:'',brevoSender:'',site:'tiagoseltenreich.com.br',whatsappTiago:''};
+
+function renderConfig(){
+  const el=document.getElementById('configContent');
+  if(!el)return;
+  const c=window._config;
+  el.innerHTML=`
+  <div style="max-width:600px">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--text);margin-bottom:16px">Configurações</div>
+
+    <!-- Z-API -->
+    <div class="dash-card" style="margin-bottom:12px">
+      <h3><i class="ti ti-brand-whatsapp" style="color:#25D366"></i> WhatsApp — Z-API</h3>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Conecte sua conta Z-API para envio automático de WhatsApp. Plano a partir de R$90/mês em z-api.io</div>
+      <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Instance ID</label>
+      <input id="cfgZapInstance" type="text" value="${esc(c.zapInstance)}" placeholder="Ex: 3D5AXXXXXXXXXX" style="width:100%;padding:8px 10px;background:var(--navy3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:13px;font-family:'Barlow',sans-serif;margin-bottom:8px">
+      <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Token</label>
+      <input id="cfgZapKey" type="password" value="${esc(c.zapKey)}" placeholder="Seu token Z-API" style="width:100%;padding:8px 10px;background:var(--navy3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:13px;font-family:'Barlow',sans-serif;margin-bottom:8px">
+      <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Seu WhatsApp (com DDD)</label>
+      <input id="cfgWhatsapp" type="text" value="${esc(c.whatsappTiago)}" placeholder="Ex: 51999999999" style="width:100%;padding:8px 10px;background:var(--navy3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:13px;font-family:'Barlow',sans-serif">
+    </div>
+
+    <!-- BREVO -->
+    <div class="dash-card" style="margin-bottom:12px">
+      <h3><i class="ti ti-mail" style="color:var(--gold)"></i> E-mail — Brevo</h3>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Brevo é gratuito até 300 e-mails/dia. Crie conta em brevo.com e gere sua API Key.</div>
+      <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">API Key Brevo</label>
+      <input id="cfgBrevoKey" type="password" value="${esc(c.brevoKey)}" placeholder="xkeysib-..." style="width:100%;padding:8px 10px;background:var(--navy3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:13px;font-family:'Barlow',sans-serif;margin-bottom:8px">
+      <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">E-mail remetente</label>
+      <input id="cfgBrevoSender" type="text" value="${esc(c.brevoSender)}" placeholder="tiago@tiagoseltenreich.com.br" style="width:100%;padding:8px 10px;background:var(--navy3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:13px;font-family:'Barlow',sans-serif">
+    </div>
+
+    <!-- GERAL -->
+    <div class="dash-card" style="margin-bottom:12px">
+      <h3><i class="ti ti-world" style="color:var(--info)"></i> Configurações Gerais</h3>
+      <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Site (usado nos CTAs)</label>
+      <input id="cfgSite" type="text" value="${esc(c.site)}" placeholder="tiagoseltenreich.com.br" style="width:100%;padding:8px 10px;background:var(--navy3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:13px;font-family:'Barlow',sans-serif">
+    </div>
+
+    <button class="btn btn-gold" onclick="salvarConfig()" style="width:100%"><i class="ti ti-device-floppy"></i> Salvar configurações</button>
+
+    <!-- TESTE -->
+    <div class="dash-card" style="margin-top:12px">
+      <h3><i class="ti ti-test-pipe" style="color:var(--ai2)"></i> Testar envio</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Número de teste (com DDD, sem +55)</div>
+          <input id="testeWaNum" type="text" placeholder="51999999999" style="width:100%;padding:7px 9px;background:var(--navy3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:13px;font-family:'Barlow',sans-serif;margin-bottom:6px">
+          <button class="btn bsm" onclick="testarWhatsApp()" style="width:100%"><i class="ti ti-brand-whatsapp"></i> Testar WhatsApp</button>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:6px">E-mail de teste</div>
+          <input id="testeEmail" type="text" placeholder="teste@email.com" style="width:100%;padding:7px 9px;background:var(--navy3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:13px;font-family:'Barlow',sans-serif;margin-bottom:6px">
+          <button class="btn bsm" onclick="testarEmail()" style="width:100%"><i class="ti ti-mail"></i> Testar E-mail</button>
+        </div>
+      </div>
+      <div id="testeResult" style="display:none;margin-top:8px;padding:8px;border-radius:var(--r);font-size:12px"></div>
+    </div>
+  </div>`;
+}
+
+function salvarConfig(){
+  window._config={
+    zapInstance:document.getElementById('cfgZapInstance').value.trim(),
+    zapKey:document.getElementById('cfgZapKey').value.trim(),
+    whatsappTiago:document.getElementById('cfgWhatsapp').value.trim(),
+    brevoKey:document.getElementById('cfgBrevoKey').value.trim(),
+    brevoSender:document.getElementById('cfgBrevoSender').value.trim(),
+    site:document.getElementById('cfgSite').value.trim()||'tiagoseltenreich.com.br',
+  };
+  // Salva no Firebase
+  window.saveUserDB({id:'config_evolua',type:'config',...window._config});
+  toast('Configurações salvas ✓');
+}
+
+async function enviarWhatsApp(numero,mensagem){
+  const c=window._config;
+  if(!c.zapKey||!c.zapInstance)throw new Error('Z-API não configurada');
+  const num=numero.replace(/\D/g,'');
+  const res=await fetch(`https://api.z-api.io/instances/${c.zapInstance}/token/${c.zapKey}/send-text`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({phone:num,message:mensagem})
+  });
+  const data=await res.json();
+  if(!res.ok)throw new Error(data.message||'Erro Z-API');
+  return data;
+}
+
+async function enviarEmail(para,assunto,corpo){
+  const c=window._config;
+  if(!c.brevoKey)throw new Error('Brevo não configurado');
+  const res=await fetch('https://api.brevo.com/v3/smtp/email',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','api-key':c.brevoKey},
+    body:JSON.stringify({
+      sender:{name:'Tiago Seltenreich',email:c.brevoSender||'contato@tiagoseltenreich.com.br'},
+      to:[{email:para}],
+      subject:assunto,
+      textContent:corpo
+    })
+  });
+  const data=await res.json();
+  if(!res.ok)throw new Error(data.message||'Erro Brevo');
+  return data;
+}
+
+async function testarWhatsApp(){
+  const num=document.getElementById('testeWaNum').value.trim();
+  if(!num){toast('Informe o número');return;}
+  const res=document.getElementById('testeResult');
+  res.style.display='block';res.style.background='var(--navy3)';res.textContent='Enviando...';
+  try{
+    await enviarWhatsApp(num,'Olá! Teste de envio automático do sistema Evolua. ✅');
+    res.style.background='rgba(29,158,117,.1)';res.textContent='✅ WhatsApp enviado com sucesso!';
+  }catch(e){
+    res.style.background='rgba(224,96,48,.1)';res.textContent='❌ Erro: '+e.message;
+  }
+}
+
+async function testarEmail(){
+  const email=document.getElementById('testeEmail').value.trim();
+  if(!email){toast('Informe o e-mail');return;}
+  const res=document.getElementById('testeResult');
+  res.style.display='block';res.style.background='var(--navy3)';res.textContent='Enviando...';
+  try{
+    await enviarEmail(email,'Teste — Sistema Evolua','Olá!\n\nEste é um teste de envio automático do sistema Evolua.\n\nTiago Seltenreich');
+    res.style.background='rgba(29,158,117,.1)';res.textContent='✅ E-mail enviado com sucesso!';
+  }catch(e){
+    res.style.background='rgba(224,96,48,.1)';res.textContent='❌ Erro: '+e.message;
+  }
+}
+
+function aplicarVariaveis(texto,lead){
+  const site=window._config?.site||'tiagoseltenreich.com.br';
+  return texto
+    .replace(/\{nome\}/g,lead.nomeContato||lead.nome||'')
+    .replace(/\{imobiliaria\}/g,lead.nome||'')
+    .replace(/\{cidade\}/g,lead.cidade||'')
+    .replace(/\{site\}/g,site);
+}
+
+async function dispararCadenciaLead(leadId){
+  const l=(window._leads||[]).find(x=>x.id===leadId);
+  if(!l||!l.cadenciaAtiva)return;
+  const hoje=new Date();
+  const inicio=new Date(l.cadenciaInicio);
+  const diasPassados=Math.floor((hoje-inicio)/(1000*60*60*24));
+  const proximaMensagem=CADENCIA_PADRAO.find(m=>m.dia>=(l.cadenciaDiaAtual||0)&&m.dia<=diasPassados&&m.ativo);
+  if(!proximaMensagem)return;
+
+  const texto=aplicarVariaveis(proximaMensagem.msg,l);
+
+  try{
+    if(proximaMensagem.canal==='whatsapp'&&l.contato){
+      await enviarWhatsApp(l.contato,texto);
+    } else if(proximaMensagem.canal==='email'&&l.email){
+      await enviarEmail(l.email,aplicarVariaveis(proximaMensagem.assunto,l),texto);
+    }
+    l.cadenciaDiaAtual=proximaMensagem.dia+1;
+    l.ultimoEnvio=new Date().toISOString();
+    await window.saveLead(l);
+    toast(`Mensagem enviada para ${l.nome} ✓`);
+  }catch(e){
+    toast(`Erro ao enviar para ${l.nome}: ${e.message}`);
+  }
+}
+
+function openNovaCadencia(){toast('Em breve: criar cadências personalizadas');}
+
 </script>
 </body>
 </html>
